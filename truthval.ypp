@@ -1,0 +1,135 @@
+%{
+	#include <iostream>
+	#include <stdlib.h>
+	#include <stdio.h>
+
+	using namespace std;
+
+	#define YYERROR_VERBOSE 1
+	extern int yylex();
+	int yyerror(const char * message);
+%}
+
+%token VOID
+%token INT
+%token BYTE
+%token B
+%token BOOL
+%left AND
+%left OR
+%right NOT
+%token TRUE
+%token FALSE
+%token RETURN
+%token IF
+%token ELSE
+%token WHILE
+%token BREAK
+%token CONTINUE
+%token PRECOND
+%token SC
+%token COMMA
+%token LPAREN
+%token RPAREN
+%token LBRACE
+%token RBRACE
+%right ASSIGN
+%left RELOP
+%left BINOP
+%token ID
+%token NUM
+%token STRING
+
+
+%%
+
+Program	:	Funcs
+	;
+
+Funcs	:	/*epsilon*/
+		|	FuncDecl Funcs
+	;
+FuncDecl	:	RetType ID LPAREN Formals RPAREN PreConditions LBRACE Statements RBRACE
+	;
+RetType	:	Type 
+		|	VOID
+	;
+Formals	:	/*epsilon*/
+		|	FormalsList		
+	;
+FormalsList	:	FormalDecl 
+			|	FormalDecl COMMA FormalsList
+	;
+FormalDecl	:	Type ID
+	;
+PreConditions	:	/*epsilon*/
+				|	PreConditions PreCondition
+	;
+PreCondition	:	PRECOND LPAREN Exp RPAREN
+	;
+Statements	:	Statement 
+			|	Statements Statement
+	;
+Statement:	OpenStatement	|
+			CloseStatement
+		;
+OpenStatement:	IF LPAREN Exp RPAREN SimpleStatement
+			|	IF LPAREN Exp RPAREN OpenStatement
+			|	IF LPAREN Exp RPAREN CloseStatement ELSE OpenStatement
+			|	WHILE LPAREN Exp RPAREN OpenStatement
+		;
+CloseStatement:	SimpleStatement
+			|	IF LPAREN Exp RPAREN CloseStatement ELSE CloseStatement
+			|	WHILE LPAREN Exp RPAREN CloseStatement
+		;
+
+SimpleStatement	:	LBRACE Statements RBRACE
+				|	Type ID SC
+				|	Type ID ASSIGN Exp SC
+				|	ID ASSIGN Exp SC
+				|	Call SC
+				|	RETURN SC
+				|	RETURN Exp SC
+				|	BREAK SC
+				|	CONTINUE SC
+			;
+Call	:	ID LPAREN ExpList RPAREN
+		|	ID LPAREN RPAREN
+	;
+ExpList	:	Exp
+		|	Exp COMMA ExpList
+	;
+Type	:	INT
+		|	BYTE
+		|	BOOL
+	;
+Exp	:	LPAREN Exp RPAREN
+	|	Exp BINOP Exp
+	|	ID
+	|	Call
+	|	NUM
+	|	NUM B
+	|	STRING
+	|	TRUE
+	|	FALSE
+	|	NOT Exp
+	|	Exp AND Exp
+	|	Exp OR	Exp
+	|	Exp RELOP Exp
+	;
+
+%%
+
+int main()
+{
+	#ifdef YYDEBUG
+		yydebug = 1;
+	#endif
+	return yyparse();
+}
+
+int yyerror(const char * message)
+{
+	cout<<"Parse error: "<<message<<endl;
+	exit(0);
+}
